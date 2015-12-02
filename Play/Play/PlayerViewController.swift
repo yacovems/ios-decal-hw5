@@ -12,6 +12,8 @@ import AVFoundation
 class PlayerViewController: UIViewController {
     var tracks: [Track]!
     var scAPI: SoundCloudAPI!
+    var played = [Bool](count: 1000, repeatedValue: false)
+    var playing: Bool!
     
     var currentIndex: Int!
     var player: AVPlayer!
@@ -24,6 +26,7 @@ class PlayerViewController: UIViewController {
     var artistLabel: UILabel!
     var titleLabel: UILabel!
     
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view = UIView(frame: UIScreen.mainScreen().bounds)
@@ -32,6 +35,7 @@ class PlayerViewController: UIViewController {
         scAPI = SoundCloudAPI()
         scAPI.loadTracks(didLoadTracks)
         currentIndex = 0
+        playing = false
         
         player = AVPlayer()
         
@@ -130,7 +134,23 @@ class PlayerViewController: UIViewController {
         let track = tracks[currentIndex]
         let url = NSURL(string: "https://api.soundcloud.com/tracks/\(track.id)/stream?client_id=\(clientID)")!
         // FILL ME IN
-    
+        if !played[currentIndex]{
+            let newItem = AVPlayerItem(URL: url)
+            player = AVPlayer(playerItem: newItem)
+        }
+        if player.rate == 0{
+            print("Playing track - ", currentIndex + 1)
+            player.play()
+            played[currentIndex] = true
+            playPauseButton.setImage(UIImage(named: "pause"), forState: .Normal)
+            playing = true
+        }
+        else{
+            print("Pausing track - ", currentIndex + 1)
+            player.pause()
+            playPauseButton.setImage(UIImage(named: "play"), forState: .Normal)
+            playing = false
+        }
     }
     
     /* 
@@ -140,7 +160,26 @@ class PlayerViewController: UIViewController {
      * Remember to update the currentIndex
      */
     func nextTrackTapped(sender: UIButton) {
-    
+        let numOfTracks: Int = tracks.count
+        if currentIndex < numOfTracks - 1{
+            //Go to next song
+            played[currentIndex] = false
+            currentIndex = currentIndex + 1
+            if playing == true{
+                playOrPauseTrack(playPauseButton)
+            }
+            else{
+                playOrPauseTrack(playPauseButton)
+                player.pause()
+                playing = false
+                playPauseButton.setImage(UIImage(named: "play"), forState: .Normal)
+            }
+            loadTrackElements()
+            
+        }
+        else{
+            print("No more tracks!")
+        }
     }
 
     /*
@@ -154,7 +193,32 @@ class PlayerViewController: UIViewController {
      */
 
     func previousTrackTapped(sender: UIButton) {
-    
+        let zero = CMTimeMake(0, 1)
+        let three = CMTimeMake(3, 1)
+        if CMTimeCompare(player.currentTime(), three) == 1{
+            player.seekToTime(zero)
+        }
+        else{
+            if (currentIndex - 1) >= 0{
+                
+                played[currentIndex] = false
+                currentIndex = currentIndex - 1
+                if playing == true{
+                    playOrPauseTrack(playPauseButton)
+                }
+                else{
+                    playOrPauseTrack(playPauseButton)
+                    player.pause()
+                    playing = false
+                    playPauseButton.setImage(UIImage(named: "play"), forState: .Normal)
+                }
+                loadTrackElements()
+                
+            }
+            else{
+                print("We are on the first track!")
+            }
+        }
     }
     
     
